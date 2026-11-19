@@ -1,0 +1,17 @@
+{
+  "name": "Dein Tempelkalender",
+  "short_name": "Tempel",
+  "description": "24 Türchen, die Dich zurück zu Dir führen. The TAMARÁ Temple.",
+  "lang": "de",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1D2414",
+  "theme_color": "#1D2414",
+  "icons": [
+    {"src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

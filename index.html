@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1D2414">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tempel">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="assets/icon-192.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<title>Dein Tempelkalender</title>
+<style>
+  :root{
+    --deep:#1D2414; --green:#414D3F; --gold:#CCB583; --cream:#f2eee8;
+    --gold-glow:rgba(204,181,131,.45);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(ellipse at 50% 0%, #2c3a2a 0%, var(--deep) 60%, #0f140a 100%);
+    color:var(--cream);
+    font-family:"Iowan Old Style","Palatino Linotype",Georgia,serif;
+    overflow-x:hidden;
+  }
+  /* Sterne */
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .star{position:absolute;width:2px;height:2px;border-radius:50%;background:var(--gold);opacity:.2;animation:tw 4s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.15}50%{opacity:.85}}
+
+  /* Tempel-Silhouette unten */
+  .temple{position:fixed;left:0;right:0;bottom:0;height:48vh;z-index:0;pointer-events:none;opacity:.4;
+    background:url(assets/tempel.jpg) center bottom/cover no-repeat;
+    -webkit-mask-image:linear-gradient(to top,#000 25%,transparent 100%);mask-image:linear-gradient(to top,#000 25%,transparent 100%)}
+
+  main{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:max(24px,env(safe-area-inset-top)) 16px 90px}
+
+  /* Intro */
+  #intro{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;padding:24px}
+  #intro .dragon-wrap{width:min(230px,58vw);height:auto;filter:drop-shadow(0 0 14px var(--gold-glow))}
+  .eyebrow{font-family:"Helvetica Neue",Arial,sans-serif;letter-spacing:.32em;font-size:11px;color:var(--gold);text-transform:uppercase}
+  h1{font-weight:400;font-size:34px;line-height:1.15;color:var(--cream)}
+  h1 em{color:var(--gold);font-style:italic}
+  .by{font-family:"Helvetica Neue",Arial,sans-serif;letter-spacing:.16em;font-size:11px;color:#bfb9ad;text-transform:uppercase;margin-top:-6px}
+  .lead{font-size:16px;line-height:1.5;color:#d9d3c6;max-width:320px}
+  .btn{
+    font-family:"Helvetica Neue",Arial,sans-serif;letter-spacing:.18em;text-transform:uppercase;font-size:12px;
+    color:var(--deep);background:var(--gold);border:0;border-radius:999px;padding:16px 34px;cursor:pointer;
+    box-shadow:0 0 24px var(--gold-glow);transition:transform .2s
+  }
+  .btn:active{transform:scale(.96)}
+  .btn.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold);box-shadow:none}
+
+  /* Kalender */
+  #calendar{display:none}
+  header.top{text-align:center;padding:18px 0 8px}
+  header.top h2{font-weight:400;font-size:26px}
+  header.top p{font-size:14px;color:#cfc8b8;margin-top:6px}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:22px}
+  .door{
+    position:relative;aspect-ratio:3/4;border-radius:14px 14px 6px 6px;border:1px solid rgba(204,181,131,.5);
+    background:linear-gradient(160deg,var(--green),#2b352a);perspective:600px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+    transition:transform .25s, box-shadow .25s;
+  }
+  .door .num{font-size:26px;color:var(--gold);z-index:2}
+  .door::after{content:"";position:absolute;inset:6px;border:1px solid rgba(204,181,131,.25);border-radius:10px 10px 3px 3px}
+  .door.open{background:radial-gradient(circle at 50% 60%,rgba(204,181,131,.35),var(--deep) 75%)}
+  .door.open .num{color:var(--cream)}
+  .door.today{box-shadow:0 0 22px var(--gold-glow);animation:pulse 2.6s ease-in-out infinite}
+  @keyframes pulse{50%{box-shadow:0 0 34px rgba(204,181,131,.7)}}
+  .door.locked{opacity:.45;cursor:default}
+  .door.locked .num{font-size:20px}
+  .door small{position:absolute;bottom:7px;font-family:"Helvetica Neue",Arial,sans-serif;font-size:9px;letter-spacing:.1em;color:#bdb6a4;z-index:2}
+  .door.swing{animation:swing .6s ease forwards}
+  @keyframes swing{to{transform:perspective(600px) rotateY(-70deg);opacity:.2}}
+
+  .demo{margin-top:26px;text-align:center;font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#a8a190;letter-spacing:.08em}
+  .demo select{background:var(--green);color:var(--cream);border:1px solid var(--gold);border-radius:8px;padding:4px 8px;margin-left:6px}
+
+  /* Türchen-Ansicht */
+  #sheet{
+    position:fixed;inset:0;z-index:10;display:none;flex-direction:column;align-items:center;
+    background:radial-gradient(ellipse at 50% 20%,#34452f 0%,var(--deep) 70%);
+    overflow-y:auto;padding:max(28px,env(safe-area-inset-top)) 22px 40px;text-align:center;
+  }
+  #sheet.show{display:flex;animation:fadein .7s ease}
+  @keyframes fadein{from{opacity:0}to{opacity:1}}
+  #sheet .dragon-wrap{width:min(190px,50vw);height:auto;flex:none;margin-top:8px;filter:drop-shadow(0 0 16px var(--gold-glow))}
+  #sheet h3{font-weight:400;font-size:28px;margin:6px 0 10px}
+  #sheet .body{font-size:16.5px;line-height:1.6;color:#e2dccf;max-width:420px;margin-bottom:22px}
+  .player{width:100%;max-width:420px;border:1px solid rgba(204,181,131,.45);border-radius:14px;padding:14px 16px;margin-bottom:26px;
+    display:flex;align-items:center;gap:14px;text-align:left;background:rgba(65,77,63,.5)}
+  .player .play{width:44px;height:44px;border-radius:50%;background:var(--gold);color:var(--deep);border:0;font-size:16px;flex:none}
+  .player .bar{height:3px;flex:1;background:rgba(204,181,131,.3);border-radius:2px;position:relative}
+  .player .bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--gold);border-radius:2px}
+  .player span{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;color:#cfc8b8;letter-spacing:.06em}
+  .placeholder{font-family:"Helvetica Neue",Arial,sans-serif;font-size:11px;letter-spacing:.06em;color:#a8a190;margin-bottom:22px}
+
+  /* Drachen-Zeichnung */
+  .dragon path,.dragon .draw{fill:none;stroke:var(--gold);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+  .dragon .fill{fill:var(--gold);stroke:none}
+  .dragon .draw{stroke-dasharray:900;stroke-dashoffset:900}
+  .dragon.go .draw{animation:draw 2.6s ease forwards}
+  .dragon.go .draw.d2{animation-delay:.5s}
+  .dragon.go .draw.d3{animation-delay:1s}
+  @keyframes draw{to{stroke-dashoffset:0}}
+  .dragon .eye{opacity:0}
+  .dragon.go .eye{animation:eye 1s 2.2s forwards}
+  @keyframes eye{to{opacity:1}}
+  .dragon-wrap{opacity:0;transform:translateY(14px) scale(.94)}
+  .dragon-wrap.go{animation:rise 2.4s ease forwards, float 6s 2.4s ease-in-out infinite}
+  @keyframes rise{to{opacity:1;transform:none}}
+  @keyframes float{50%{transform:translateY(-6px)}}
+
+  #sound{position:fixed;top:max(14px,env(safe-area-inset-top));right:14px;z-index:20;width:40px;height:40px;border-radius:50%;
+    border:1px solid var(--gold);background:rgba(29,36,20,.7);color:var(--gold);font-size:16px;display:none}
+  #sound.off{opacity:.45}
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+<div class="temple" aria-hidden="true"></div>
+
+<button id="sound" aria-label="Klang an oder aus">♪</button>
+
+<main>
+  <!-- Intro -->
+  <section id="intro">
+    <img class="dragon-wrap" id="introDragon" src="assets/drache.png" alt="">
+    <div class="eyebrow">The TAMARÁ Temple</div>
+    <h1>Dein <em>Tempelkalender</em></h1>
+    <div class="by">von Sylvia A. Wenniges</div>
+    <p class="lead">24 Türchen, die Dich zurück zu Dir führen. Eins pro Tag, in Deinem Tempo.</p>
+    <button class="btn" id="enter" style="margin-top:34px">Eintreten</button>
+  </section>
+
+  <!-- Kalender -->
+  <section id="calendar">
+    <header class="top">
+      <div class="eyebrow">Dezember</div>
+      <h2>Deine Türchen</h2>
+      <p id="todayLine"></p>
+    </header>
+    <div class="grid" id="grid"></div>
+    <div class="demo">Prototyp · so tut die App, als wäre heute der
+      <select id="demoDay"></select>
+    </div>
+  </section>
+</main>
+
+<!-- Türchen -->
+<section id="sheet" aria-live="polite">
+  <img class="dragon-wrap" id="sheetDragon" src="assets/drache.png" alt="">
+  <div class="eyebrow" id="sheetNum"></div>
+  <h3 id="sheetTitle"></h3>
+  <p class="body" id="sheetBody"></p>
+  <div class="player"><button class="play" id="playBtn" aria-label="Abspielen">▶</button><div class="bar"><i id="barFill"></i></div><span>Audio folgt</span></div>
+  <p class="placeholder">Platzhalter-Inhalt · echte Texte und Audios kommen aus Sylvias O-Ton</p>
+  <button class="btn ghost" id="closeSheet">Zurück zum Kalender</button>
+</section>
+
+<script>
+/* ---------- Drache (eigene Linienzeichnung) ---------- */
+const DRAGON_SVG = `
+  <g>
+    <path class="draw" d="M70 392 C40 320 150 330 150 262 C150 190 55 200 78 128 C92 84 140 82 172 58"/>
+    <path class="draw d2" d="M150 262 C195 225 255 215 288 160 C268 186 248 184 238 178 C246 200 226 218 204 220 C216 236 200 246 184 246"/>
+    <path class="draw d2" d="M110 330 C140 340 175 336 196 312 C176 318 160 316 150 306"/>
+    <path class="draw d3" d="M166 66 C176 36 206 26 232 32 L254 42 L232 48 C218 52 206 62 196 76 Z"/>
+    <path class="draw d3" d="M178 42 L170 18 M192 36 L190 12"/>
+    <path class="fill eye" d="M204 44 a3 3 0 1 0 .1 0z"/>
+  </g>`;
+function drawDragon(el){ el.classList.remove('go'); void el.getBoundingClientRect(); el.classList.add('go'); }
+drawDragon(document.getElementById('introDragon'));
+
+/* ---------- Sterne ---------- */
+const st = document.getElementById('stars');
+for(let i=0;i<70;i++){
+  const s=document.createElement('i'); s.className='star';
+  s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*100+'%';
+  s.style.animationDelay=(Math.random()*4)+'s'; s.style.animationDuration=(3+Math.random()*4)+'s';
+  st.appendChild(s);
+}
+
+/* ---------- Klang: Musik-Loop (Pixabay, Siarhei_Korbut) + Glocke aus dem Code ---------- */
+let ac=null, master=null, soundOn=true, droneStarted=false, music=null; const MUSIC_VOL=0.20;
+function initAudio(){
+  if(ac) return;
+  ac = new (window.AudioContext||window.webkitAudioContext)();
+  master = ac.createGain(); master.gain.value = soundOn?0.9:0; master.connect(ac.destination);
+}
+function startDrone(){
+  if(droneStarted) return; droneStarted=true;
+  music=new Audio('assets/musik-theta-loop.mp3'); music.loop=true; music.volume=0; music.muted=!soundOn;
+  music.play().then(()=>{ let v=0; const id=setInterval(()=>{ v=Math.min(MUSIC_VOL,v+0.01); music.volume=v; if(v>=MUSIC_VOL) clearInterval(id); },200); }).catch(()=>{});
+}
+function duck(){
+  if(!music||music.volume<MUSIC_VOL-0.02) return; music.volume=MUSIC_VOL*0.4; setTimeout(()=>{ let x=MUSIC_VOL*0.4; const id=setInterval(()=>{ x=Math.min(MUSIC_VOL,x+0.01); music.volume=x; if(x>=MUSIC_VOL) clearInterval(id); },150); },2500);
+}
+function bell(base=523.25){
+  if(!ac) return; duck(); const t=ac.currentTime;
+  const lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=1100; lp.connect(master);
+  [[1,0.26,7],[2.0,0.07,5],[2.76,0.035,3.5]].forEach(([m,a,dur])=>{
+    const o=ac.createOscillator(); o.type='sine'; o.frequency.value=base*m;
+    const g=ac.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(a,t+0.12);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(g); g.connect(lp); o.start(t); o.stop(t+dur+0.1);
+  });
+}
+const soundBtn=document.getElementById('sound');
+soundBtn.onclick=()=>{ soundOn=!soundOn; soundBtn.classList.toggle('off',!soundOn); if(master) master.gain.value=soundOn?0.9:0; if(music) music.muted=!soundOn; };
+
+/* ---------- Kalender ---------- */
+const CONTENT = {
+  1:{t:'Türchen 1',b:'Hier steht später Dein Text zum ersten Türchen, in meiner Stimme. Dieser Absatz ist nur ein Platzhalter für den Prototyp.'},
+  2:{t:'Türchen 2',b:'Platzhalter für das zweite Türchen. Später kommen hier ein kurzer Impuls und ein Audio hin.'},
+  3:{t:'Türchen 3',b:'Platzhalter für das dritte Türchen. Aufbau: kurzer Text, Audio, ein Satz zum Mitnehmen.'}
+};
+let today = 3;
+const store = { get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}} };
+const opened = new Set(JSON.parse(store.get('opened')||'[]'));
+
+const sel=document.getElementById('demoDay');
+for(let i=1;i<=24;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i+'. Dezember'; sel.appendChild(o); }
+sel.value=today;
+sel.onchange=()=>{ today=+sel.value; render(); };
+
+function render(){
+  const grid=document.getElementById('grid'); grid.innerHTML='';
+  document.getElementById('todayLine').textContent = today<=24 ? `Heute ist das ${today}. Türchen offen.` : '';
+  for(let i=1;i<=24;i++){
+    const d=document.createElement('div'); d.className='door';
+    const locked = i>today;
+    if(locked) d.classList.add('locked');
+    if(i===today) d.classList.add('today');
+    if(opened.has(i)) d.classList.add('open');
+    d.innerHTML=`<span class="num">${i}</span>` + (locked?`<small>ab ${i}.12.</small>`:'');
+    if(!locked) d.onclick=()=>openDoor(i,d);
+    grid.appendChild(d);
+  }
+}
+function openDoor(n,el){
+  bell(n%2?220:246.94);
+  el.classList.add('swing');
+  setTimeout(()=>{
+    const c=CONTENT[n]||{t:`Türchen ${n}`,b:'Dieses Türchen wird noch gefüllt. Im Prototyp haben nur die ersten drei Platzhalter-Inhalte.'};
+    document.getElementById('sheetNum').textContent=`${n}. Dezember`;
+    document.getElementById('sheetTitle').textContent=c.t;
+    document.getElementById('sheetBody').textContent=c.b;
+    document.getElementById('sheet').classList.add('show');
+    drawDragon(document.getElementById('sheetDragon'));
+    opened.add(n); store.set('opened',JSON.stringify([...opened]));
+    el.classList.remove('swing');
+  },550);
+}
+document.getElementById('closeSheet').onclick=()=>{ document.getElementById('sheet').classList.remove('show'); render(); };
+
+/* Wiedergabe-Knopf: nur Optik im Prototyp */
+let playing=false, prog=0, timer=null;
+document.getElementById('playBtn').onclick=()=>{
+  playing=!playing; document.getElementById('playBtn').textContent=playing?'❚❚':'▶';
+  clearInterval(timer);
+  if(playing){ timer=setInterval(()=>{prog=(prog+1)%101; document.getElementById('barFill').style.width=prog+'%';},200); }
+};
+
+document.getElementById('enter').onclick=()=>{
+  initAudio(); if(ac.state==='suspended') ac.resume(); startDrone(); bell(196);
+  document.getElementById('intro').style.display='none';
+  document.getElementById('calendar').style.display='block';
+  soundBtn.style.display='block';
+  render();
+};
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){ window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{})); }
+</script>
+</body>
+</html>
