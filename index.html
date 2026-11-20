@@ -242,9 +242,18 @@ function render(){
     grid.appendChild(d);
   }
 }
+/* Probelauf: Türchen mit Alfima-Modul. Der bezahlte Inhalt liegt in Alfima (Login pro Person), nicht in dieser App. */
+const ALFIMA = {
+  1:'https://alfima.com/sylvia_a_wenniges/courses/18777/modules/96377'
+};
 function openDoor(n,el){
   bell(n%2?220:246.94);
   el.classList.add('swing');
+  if(ALFIMA[n]){
+    opened.add(n); store.set('opened',JSON.stringify([...opened]));
+    setTimeout(()=>{ el.classList.remove('swing'); location.href=ALFIMA[n]; },700);
+    return;
+  }
   setTimeout(()=>{
     const c=CONTENT[n]||{t:`Türchen ${n}`,b:'Dieses Türchen wird noch gefüllt. Im Prototyp haben nur die ersten drei Platzhalter-Inhalte.'};
     document.getElementById('sheetNum').textContent=`${n}. Dezember`;
