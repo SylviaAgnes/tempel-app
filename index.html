@@ -242,10 +242,9 @@ function render(){
     grid.appendChild(d);
   }
 }
-/* Probelauf: Türchen mit Alfima-Modul. Der bezahlte Inhalt liegt in Alfima (Login pro Person), nicht in dieser App. */
-const ALFIMA = {
-  1:'https://alfima.com/sylvia_a_wenniges/courses/18777/modules/96377'
-};
+/* Türchen = Alfima-Modul (Kurs 18784, Module 96399–96422). Der bezahlte Inhalt liegt in Alfima (Login pro Person), nicht in dieser App. */
+const ALFIMA = {};
+for(let i=1;i<=24;i++) ALFIMA[i]='https://alfima.com/sylvia_a_wenniges/courses/18784/modules/'+(96398+i);
 function openDoor(n,el){
   bell(n%2?220:246.94);
   el.classList.add('swing');
